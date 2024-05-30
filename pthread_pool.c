@@ -194,7 +194,7 @@ void enqueue_task(void (*function)(void *), void *data) {
         __sync_fetch_and_sub(&efd_cnt, 1);
         FREE_UNLOCK(efd_r_lock);
 
-        int _ = write(fd, "1", 8);
+        ssize_t _ = write(fd, &fd, 4);
     }
     
     
