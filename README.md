@@ -3,6 +3,7 @@ C High performance pthread_pool：基于c语言高性能线程池，本项目目
 如果你有其他好的想法，欢迎交流，可以在old目录加入你的代码，并测试。
 
 ## 编译
+平台:linux
 `make`
 ## 说明
 old文件夹里面是老版本,使用常规方式实现
