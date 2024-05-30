@@ -4,8 +4,8 @@ C High performance pthread_pool：基于c语言高性能线程池，本项目目
 
 ## 编译
 平台:linux
-
-`make`
+mkdir out
+make
 ## 说明
 old文件夹里面是老版本,使用常规方式实现
 根目录下的版本是优化后的
