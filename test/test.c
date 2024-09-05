@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "pthread_pool.h"
 int flag[3] = {0,0,0};
-#define LOOP 1000
+#define LOOP 5024
 
 void example_task1(void *data) {
     int *num = (int *)data;
@@ -45,7 +45,7 @@ void example_task3(void *data) {
 
 int main() {
     thread_pool_init();
-
+    sleep(1);
     struct timespec ts;
     struct timespec ts2;
     int time[3] = {0,0,0};

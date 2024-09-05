@@ -14,6 +14,8 @@ test_m:
 test_old:
 	$(CC)  ./old/pthread_pool.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/oldt1
 	$(CC)  ./old/pthread_pool.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/oldt2
+	$(CC)  ./old/pthread_pool2.c ./test/test.c  -I . -lpthread -O2 -o  ./out/oldt11
+	$(CC)  ./old/pthread_pool2.c ./test/test2.c -I . -lpthread -O2 -o  ./out/oldt22
 clean:
 	rm ./out/t1
 	rm ./out/t2

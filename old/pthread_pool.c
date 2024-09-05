@@ -23,7 +23,9 @@ void *worker(void *arg) {
         while (queue_front == queue_rear) {
             pthread_cond_wait(&queue_not_empty, &queue_mutex);
         }
-        task_t task = task_queue[queue_front];
+        task_t task ;
+        task.function = task_queue[queue_front].function;
+        task.data = task_queue[queue_front].data;
         queue_front = (queue_front + 1) % QUEUE_SIZE;
         pthread_cond_signal(&queue_not_full);
         pthread_mutex_unlock(&queue_mutex);
