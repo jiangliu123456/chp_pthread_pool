@@ -91,7 +91,7 @@ void *worker(void *arg) {
     int k = 10;
     int i = 0;
     eventfd_t event_arg;
-    task_t task[20];
+    task_t task[32];
 
     __sync_fetch_and_or(&efd_cnt, 1<<id);
     printf("worker %d start efd_cnt=%#x\n", id, efd_cnt);
@@ -103,17 +103,17 @@ void *worker(void *arg) {
         while (!_CAS_(&count,0,0)) {
             
             FREE_LOCK(r_lock);
-            if (count==0) {
+            if (count == 0) {
                 FREE_UNLOCK(r_lock);
                 goto re;
             }
             
             k = 1;
             if (count > (QUEUE_SIZE>>3)) {
-                k = 10;
+                k = QUEUE_SIZE>>5;// 取 16/1 QUEUE_SIZE
             }
             
-            for (i=0;i<k;i++) {
+            for (i = 0; i < k; i++) {
                 task[i].function = task_queue[queue_front].function;
                 task[i].data = task_queue[queue_front].data;
                 queue_front = (queue_front + 1) % QUEUE_SIZE;
@@ -122,22 +122,22 @@ void *worker(void *arg) {
         
             FREE_UNLOCK(r_lock);
             
-            for(i=0;i<k;i++){
+            for (i = 0; i < k; i++) {
                 (task[i].function)(task[i].data);
             }
         }
 
-        while(count==0 && k){
+        while (count == 0 && k) {
             ret = read(timerfd, &val, sizeof(val));
             k--;
         }
         
-        if(count == 0) {
+        if (count == 0) {
             FREE_LOCK(efd_w_lock);
             __sync_fetch_and_or(&efd_cnt, (1<<id));
             FREE_UNLOCK(efd_w_lock);
             
-            if(_CAS_(&count,0,0))
+            if (_CAS_(&count,0,0))
                 ret = eventfd_read(evefd[id], &event_arg);
         }
 
@@ -145,7 +145,8 @@ void *worker(void *arg) {
     return NULL;
 }
 
-void thread_pool_init() {
+void thread_pool_init() 
+{
     static int init_flag = 0;
     
     if (init_flag) {

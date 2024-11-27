@@ -12,10 +12,13 @@ test_m:
 	$(CC)  pthread_pool.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/t1
 	$(CC)  pthread_pool.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/t2
 test_old:
-	$(CC)  ./old/pthread_pool.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/oldt1
-	$(CC)  ./old/pthread_pool.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/oldt2
-	$(CC)  ./old/pthread_pool2.c ./test/test.c  -I . -lpthread -O2 -o  ./out/oldt11
-	$(CC)  ./old/pthread_pool2.c ./test/test2.c -I . -lpthread -O2 -o  ./out/oldt22
+	$(CC)  ./old/pthread_pool.c   ./test/test.c  -I . -lpthread -O2 -o  ./out/ov1_1
+	$(CC)  ./old/pthread_pool.c   ./test/test2.c -I . -lpthread -O2 -o  ./out/ov1_2
+	$(CC)  ./old/pthread_pool2.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/ov2_1
+	$(CC)  ./old/pthread_pool2.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/ov2_2
+	$(CC)  ./old/pthread_pool3.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/ov3_1
+	$(CC)  ./old/pthread_pool3.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/ov3_2
+
 clean:
 	rm ./out/t1
 	rm ./out/t2
