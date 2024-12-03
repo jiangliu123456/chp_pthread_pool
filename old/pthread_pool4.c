@@ -58,15 +58,20 @@ int set_timer_us(int s,int us)
 
 void *worker_debug(void *arg){
     char str[10]={0};
-    int rv = scanf("%s", str);
-    if (str[0] == 's') {
-    printf("task count:%d {w_lock=%d,r_lock=%d}\n",count,w_lock,r_lock);
-    printf("efd_cnt :%#x\n", efd_cnt);
-    } 
-    if (str[0] == 'c')
-    {
-        g_runing_stat = E_RUNNING_STAT_STOP;
+    
+    while (g_runing_stat != E_RUNNING_STAT_STOP) {
+        int rv = scanf("%s", str);
+        if (str[0] == 's') {
+            printf("task count:%d {w_lock=%d,r_lock=%d}\n",count,w_lock,r_lock);
+            printf("efd_cnt :%#x\n", efd_cnt);
+            printf("{efd_w_lock :%d}\n", efd_w_lock);
+        } 
+        if (str[0] == 'c')
+        {
+            g_runing_stat = E_RUNNING_STAT_STOP;
+        }
     }
+    
     return NULL;
 }
 
@@ -75,19 +80,14 @@ void *worker_debug(void *arg){
 */
 void *worker(void *arg) {
     
+    int id = *((int*)arg);
+    int ret;
+    eventfd_t event_arg;
+    task_t task;
+    
     while(g_runing_stat == E_RUNNING_STAT_INIT) sleep(0);
     if(g_runing_stat == E_RUNNING_STAT_STOP) return NULL;
     
-    int timerfd = set_timer_us(0,1);
-    unsigned long val;
-    int timerout_cnt = 0;
-    int id = *((int*)arg);
-    int ret;
-    int k = 10;
-    int i = 0;
-    eventfd_t event_arg;
-    task_t task[32];
-
     __sync_fetch_and_or(&efd_cnt, 1<<id);
     printf("worker %d start efd_cnt=%#x\n", id, efd_cnt);
     
@@ -97,43 +97,26 @@ void *worker(void *arg) {
         while (!_CAS_(&count,0,0)) {
             
             FREE_LOCK(r_lock);
-            if (count == 0) {
+            if (count == 0) { // 双检锁
                 FREE_UNLOCK(r_lock);
                 goto re;
             }
+            task.function = task_queue[queue_front].function;
+            task.data     = task_queue[queue_front].data;
+            queue_front   = (queue_front + 1) % QUEUE_SIZE;
+            __sync_fetch_and_sub(&count, 1);
             
-            k = 1;
-            if (count > (QUEUE_SIZE>>3)) {
-                k = QUEUE_SIZE>>5;// 取 16/1 QUEUE_SIZE
-            }
-            
-            for (i = 0; i < k; i++) {
-                task[i].function = task_queue[queue_front].function;
-                task[i].data = task_queue[queue_front].data;
-                queue_front = (queue_front + 1) % QUEUE_SIZE;
-            }
-            __sync_fetch_and_sub(&count, i);
-        
             FREE_UNLOCK(r_lock);
             
-            for (i = 0; i < k; i++) {
-                (task[i].function)(task[i].data);
-            }
+            task.function(task.data);
         }
 
-        while (count == 0 && k) {
-            ret = read(timerfd, &val, sizeof(val));
-            k--;
-        }
+        FREE_LOCK(efd_w_lock);
+        __sync_fetch_and_or(&efd_cnt, (1<<id));
+        FREE_UNLOCK(efd_w_lock);
         
-        if (count == 0) {
-            FREE_LOCK(efd_w_lock);
-            __sync_fetch_and_or(&efd_cnt, (1<<id));
-            FREE_UNLOCK(efd_w_lock);
-            
-            if (_CAS_(&count,0,0))
-                ret = eventfd_read(evefd[id], &event_arg);
-        }
+        if (_CAS_(&count,0,0))
+            ret = eventfd_read(evefd[id], &event_arg);
 
     }
     return NULL;
@@ -148,7 +131,7 @@ void thread_pool_init()
     }
     
     int i = 0;
-    for (i=0;i<THREAD_COUNT;i++) {
+    for (i = 0; i < THREAD_COUNT; i++) {
         id[i] = i;
         evefd[i] = eventfd(0, /*EFD_NONBLOCK | */EFD_CLOEXEC/*|EFD_SEMAPHORE*/);
         if (evefd[i] == -1) {
@@ -164,7 +147,7 @@ void thread_pool_init()
             goto err_evefd;
         }
     }
-    //pthread_create(&threads[j], NULL, worker_debug, &id[0]);
+    pthread_create(&threads[j], NULL, worker_debug, &id[0]);
     
     g_runing_stat = E_RUNNING_STAT_RUN;
     init_flag = 1;
@@ -172,8 +155,8 @@ void thread_pool_init()
     return;
 
     err_evefd:
-    while(i>=0) {
-        if (evefd[i]>0) {
+    while( i>=0 ) {
+        if (evefd[i] > 0) {
             close(evefd[i]);
         }
         i--;
@@ -190,7 +173,7 @@ void enqueue_task(void (*function)(void *), void *data) {
         sleep(0);
     }
     FREE_LOCK(w_lock);
-    if (count==QUEUE_SIZE){
+    if (count == QUEUE_SIZE){
         FREE_UNLOCK(w_lock);
         goto re;
     }
@@ -203,14 +186,14 @@ void enqueue_task(void (*function)(void *), void *data) {
 re_notify:
     if (!_CAS_(&efd_cnt,0,0)) {
         FREE_LOCK(efd_w_lock);
-        if (efd_cnt==0) {
+        if (efd_cnt == 0) {
             FREE_UNLOCK(efd_w_lock);
             goto re_notify;
         }
 		int k  = 0;
 	    int temp = efd_cnt;
 		while (temp) {
-			if (temp&1) {
+			if (temp & 1) {
 				break;
 			}
 			temp>>=1;

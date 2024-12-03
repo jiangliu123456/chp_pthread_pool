@@ -2,7 +2,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "pthread_pool.h"
-int flag[3] = {0,0,0};
+volatile int flag[3] = {0,0,0};
 #define LOOP 5024
 
 void example_task1(void *data) {

@@ -8,7 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 int flag[3] = {0,0,0};
-#define LOOP 5024
+#define LOOP 100
 
 void example_task1(void *data) {
     int *num = (int *)data;
@@ -119,7 +119,9 @@ int main() {
         while(loop--)
         {
             threadPool.Push(task1);
+            while(flag[0] == flag[1])sleep(0);
             threadPool.Push(task2);
+            while(flag[1] == flag[2])sleep(0);
             threadPool.Push(task3);
             // 等待任务执行完成
             // ...

@@ -18,7 +18,10 @@ test_old:
 	$(CC)  ./old/pthread_pool2.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/ov2_2
 	$(CC)  ./old/pthread_pool3.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/ov3_1
 	$(CC)  ./old/pthread_pool3.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/ov3_2
-
+	$(CC)  ./old/pthread_pool4.c  ./test/test.c  -I . -lpthread -O2 -o  ./out/ov4_1
+	$(CC)  ./old/pthread_pool4.c  ./test/test2.c -I . -lpthread -O2 -o  ./out/ov4_2
+	g++    ./old/hm.cpp  -std=c++11 -I . -lpthread -O2 -o  ./out/hm.out
+	g++    ./old/hm2.cpp  -std=c++11 -I . -lpthread -O2 -o  ./out/hm2.out
 clean:
 	rm ./out/t1
 	rm ./out/t2
